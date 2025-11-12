@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Розіграші за 1 грн | Telegram</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Стили для экрана загрузки */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .loading-logo i {
+            font-size: 40px;
+            color: #667eea;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: white;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Стили для модального окна правил */
+        .rules-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .rules-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .rules-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: translateY(20px);
+            transition: transform 0.5s ease;
+        }
+
+        .rules-modal.active .rules-content {
+            transform: translateY(0);
+        }
+
+        .rules-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .rules-list {
+            margin-bottom: 25px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .rules-list li {
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .agree-btn {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.3);
+        }
+
+        .agree-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 184, 148, 0.4);
+        }
+
+        .agree-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Стили для основного контента */
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .container.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .giveaway-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .giveaway-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .slider-container {
+            position: relative;
+            height: 250px;
+            overflow: hidden;
+        }
+
+        .slider {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .slider-nav {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .slider-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slider-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .prize-card {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .prize-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .prize-description {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .price-tag {
+            background: #ffd700;
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 20px;
+            display: inline-block;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .participate-btn {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .participate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 184, 148, 0.4);
+        }
+
+        .participate-btn:active {
+            transform: translateY(0);
+        }
+
+        .share-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .share-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .share-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .share-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .share-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .share-btn i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .telegram {
+            background: #0088cc;
+            color: white;
+        }
+
+        .facebook {
+            background: #3b5998;
+            color: white;
+        }
+
+        .whatsapp {
+            background: #25D366;
+            color: white;
+        }
+
+        .twitter {
+            background: #1DA1F2;
+            color: white;
+        }
+
+        .messenger {
+            background: #006AFF;
+            color: white;
+        }
+
+        .viber {
+            background: #7360F2;
+            color: white;
+        }
+
+        .rules {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .timer-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .telegram-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #0088cc;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #00b894, #00a085);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .participants {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран загрузки -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">
+            <i class="fas fa-gift"></i>
+        </div>
+        <div class="loading-text">Розіграші за 1 грн</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с правилами -->
+    <div class="rules-modal" id="rulesModal">
+        <div class="rules-content">
+            <div class="rules-title">📋 Правила участі</div>
+            <div class="rules-list">
+                <p>Перш ніж прийняти участь у розіграші, будь ласка, ознайомтесь з правилами:</p>
+                <ul>
+                    <li>Участь у розіграші можлива лише для осіб, які досягли 18 років</li>
+                    <li>Вартість участі - 1 гривня за один квиток</li>
+                    <li>Кількість квитків, які може придбати один учасник, не обмежена</li>
+                    <li>Кожен репост у соціальних мережах збільшує ваші шанси на перемогу у 2 рази</li>
+                    <li>Переможець визначається випадковим чином серед усіх учасників</li>
+                    <li>Результати розіграшів будуть опубліковані на цьому сайті та в офіційних групах у соціальних мережах</li>
+                    <li>Організатор має право відмовити у видачі призу учаснику, який порушив правила</li>
+                    <li>Всі сплачені кошти за участі не підлягають поверненню</li>
+                    <li>Організатор розіграшу: ТОВ "Лото Гейм"</li>
+                    <li>Дата проведення розіграшу: 25.12.2024</li>
+                </ul>
+            </div>
+            <button class="agree-btn" id="agreeBtn">Я погоджуюсь з правилами</button>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="container" id="mainContainer">
+        <div class="giveaway-nav">
+            <button class="nav-btn" id="prevGiveaway"><i class="fas fa-chevron-left"></i></button>
+            <div class="giveaway-title" id="giveawayTitle">Автомобіль Toyota Camry</div>
+            <button class="nav-btn" id="nextGiveaway"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider" id="slider">
+                <!-- Слайды будут добавлены через JavaScript -->
+            </div>
+            <div class="slider-nav" id="sliderNav">
+                <!-- Навигационные точки будут добавлены через JavaScript -->
+            </div>
+        </div>
+
+        <div class="content">
+            <h1 class="title">🎉 РОЗІГРАШ ЗА 1 ГРН 🎉</h1>
+            <p class="subtitle" id="giveawaySubtitle">Стань переможцем ексклюзивного розіграшу та виграй новий автомобіль!</p>
+
+            <div class="timer">
+                До завершення: <span class="timer-value" id="timer">23:59:59</span>
+            </div>
+
+            <div class="participants">
+                <span>Учасники: <strong id="participantsCount">1,247</strong></span>
+                <span>Залишилось: <strong id="ticketsLeft">753</strong> квитків</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar" style="width: 62%"></div>
+            </div>
+
+            <div class="prize-card" id="prizeCard">
+                <div class="prize-title">🏆 Головний приз</div>
+                <div class="prize-description">Новий автомобіль Toyota Camry 2024</div>
+                <div class="price-tag">Участь за 1 грн</div>
+            </div>
+
+            <button class="participate-btn" onclick="participate()">
+                💫 Брати участь за 1 грн
+            </button>
+
+            <div class="share-section">
+                <div class="share-title">📢 Збільш свої шанси на перемогу!</div>
+                <div class="share-text">Поділись з друзями - чим більше репостів, тим вищі шанси на перемогу!</div>
+                
+                <div class="share-buttons">
+                    <button class="share-btn telegram" onclick="shareToTelegram()">
+                        <i class="fab fa-telegram"></i>
+                        Telegram
+                    </button>
+                    <button class="share-btn facebook" onclick="shareToFacebook()">
+                        <i class="fab fa-facebook"></i>
+                        Facebook
+                    </button>
+                    <button class="share-btn whatsapp" onclick="shareToWhatsApp()">
+                        <i class="fab fa-whatsapp"></i>
+                        WhatsApp
+                    </button>
+                    <button class="share-btn twitter" onclick="shareToTwitter()">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </button>
+                    <button class="share-btn messenger" onclick="shareToMessenger()">
+                        <i class="fab fa-facebook-messenger"></i>
+                        Messenger
+                    </button>
+                    <button class="share-btn viber" onclick="shareToViber()">
+                        <i class="fab fa-viber"></i>
+                        Viber
+                    </button>
+                </div>
+            </div>
+
+            <div class="rules">
+                <strong>📋 Правила участі:</strong><br>
+                • Вік від 18 років<br>
+                • Оплата участі - 1 грн<br>
+                • Кожен репост збільшує ваші шанси у 2 рази<br>
+                • Результати будуть оголошені 25.12.2024<br>
+                • Організатор: ТОВ "Лото Гейм"
+            </div>
+
+            <div class="telegram-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#0088cc">
+                    <path d="M12 0c-6.627 0-12 4.975-12 11.111 0 3.497 1.745 6.616 4.472 8.652v4.237l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.974 12-11.111 0-6.136-5.373-11.111-12-11.111zm5.797 17.305l-1.129 3.634-1.206-2.669-2.462 1.609-3.153-10.707 11.764 5.107-3.814 3.026z"/>
+                </svg>
+                Безпечно через Telegram
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ключ для сохранения согласия в localStorage
+        const AGREEMENT_KEY = 'giveaway_agreement_accepted';
+
+        // Дані про різні розіграші
+        const giveaways = [
+            {
+                id: 1,
+                title: "Автомобіль Toyota Camry",
+                subtitle: "Стань переможцем ексклюзивного розіграшу та виграй новий автомобіль!",
+                prize: "Новий автомобіль Toyota Camry 2024",
+                images: [
+                    'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600',
+                    'https://images.unsplash.com/photo-1621135802920-133df287f89c?w=600',
+                    'https://images.unsplash.com/photo-1622445275571-2abae6a03d07?w=600'
+                ],
+                participants: 1247,
+                totalTickets: 2000,
+                endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // через 24 часа
+                color: "linear-gradient(135deg, #ff6b6b, #ee5a24)"
+            },
+            {
+                id: 2,
+                title: "iPhone 15 Pro Max",
+                subtitle: "Виграй новий флагман від Apple з найкращою камерою на ринку!",
+                prize: "iPhone 15 Pro Max 512GB",
+                images: [
+                    'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600',
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600',
+                    'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=600'
+                ],
+                participants: 892,
+                totalTickets: 1500,
+                endDate: new Date(Date.now() + 12 * 60 * 60 * 1000), // через 12 часов
+                color: "linear-gradient(135deg, #667eea, #764ba2)"
+            },
+            {
+                id: 3,
+                title: "Грошовий приз 50,000 грн",
+                subtitle: "Зіграй та виграй готівку для реалізації своїх мрій!",
+                prize: "Готівка 50,000 гривень",
+                images: [
+                    'https://images.unsplash.com/photo-1554224155-6726-b3ff858f?w=600',
+                    'https://images.unsplash.com/photo-1604594849809-dfedbc827105?w=600',
+                    'https://images.unsplash.com/photo-1563013546-31eed8e9305e?w=600'
+                ],
+                participants: 2105,
+                totalTickets: 3000,
+                endDate: new Date(Date.now() + 48 * 60 * 60 * 1000), // через 48 часов
+                color: "linear-gradient(135deg, #f093fb, #f5576c)"
+            },
+            {
+                id: 4,
+                title: "Ноутбук MacBook Pro",
+                subtitle: "Потужний ноутбук для роботи та творчості чекає на переможця!",
+                prize: "MacBook Pro 16\" M2 Max",
+                images: [
+                    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600',
+                    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600',
+                    'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=600'
+                ],
+                participants: 1567,
+                totalTickets: 2500,
+                endDate: new Date(Date.now() + 36 * 60 * 60 * 1000), // через 36 часов
+                color: "linear-gradient(135deg, #4facfe, #00f2fe)"
+            }
+        ];
+
+        let currentGiveaway = 0;
+        let currentSlide = 0;
+        const slider = document.getElementById('slider');
+        const sliderNav = document.getElementById('sliderNav');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const rulesModal = document.getElementById('rulesModal');
+        const mainContainer = document.getElementById('mainContainer');
+        const agreeBtn = document.getElementById('agreeBtn');
+
+        // Проверка, согласен ли уже пользователь с правилами
+        function checkAgreement() {
+            return localStorage.getItem(AGREEMENT_KEY) === 'true';
+        }
+
+        // Сохранение согласия пользователя
+        function saveAgreement() {
+            localStorage.setItem(AGREEMENT_KEY, 'true');
+        }
+
+        // Функция загрузки
+        function startLoading() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 1;
+                loadingProgress.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            
+                            // Проверяем, согласен ли уже пользователь
+                            if (checkAgreement()) {
+                                // Если согласен, сразу показываем основной контент
+                                mainContainer.classList.add('active');
+                            } else {
+                                // Если не согласен, показываем модальное окно с правилами
+                                rulesModal.classList.add('active');
+                            }
+                        }, 500);
+                    }, 300);
+                }
+            }, 30); // 3 секунды загрузки
+        }
+
+        // Обработчик кнопки согласия с правилами
+        agreeBtn.addEventListener('click', () => {
+            // Сохраняем согласие пользователя
+            saveAgreement();
+            
+            rulesModal.classList.remove('active');
+            setTimeout(() => {
+                mainContainer.classList.add('active');
+            }, 300);
+        });
+
+        // Инициализация приложения
+        function initApp() {
+            // Проверяем, нужно ли показывать загрузку
+            if (!checkAgreement()) {
+                startLoading();
+            } else {
+                // Если пользователь уже согласен, сразу показываем основной контент
+                loadingScreen.style.display = 'none';
+                mainContainer.classList.add('active');
+            }
+            
+            // Инициализируем первый розыгрыш
+            initGiveaway();
+        }
+
+        // Ініціалізація першого розіграшу
+        function initGiveaway() {
+            updateGiveawayDisplay();
+            initSlider();
+            updateTimer();
+        }
+
+        // Оновлення відображення розіграшу
+        function updateGiveawayDisplay() {
+            const giveaway = giveaways[currentGiveaway];
+            
+            document.getElementById('giveawayTitle').textContent = giveaway.title;
+            document.getElementById('giveawaySubtitle').textContent = giveaway.subtitle;
+            document.getElementById('prizeCard').style.background = giveaway.color;
+            document.querySelector('.prize-description').textContent = giveaway.prize;
+            
+            // Оновлення прогресу
+            const progress = (giveaway.participants / giveaway.totalTickets) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('participantsCount').textContent = giveaway.participants.toLocaleString();
+            document.getElementById('ticketsLeft').textContent = (giveaway.totalTickets - giveaway.participants).toLocaleString();
+        }
+
+        // Ініціалізація слайдера
+        function initSlider() {
+            slider.innerHTML = '';
+            sliderNav.innerHTML = '';
+            currentSlide = 0;
+            
+            const giveaway = giveaways[currentGiveaway];
+            
+            // Додаємо слайди
+            giveaway.images.forEach((image, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.style.backgroundImage = `url(${image})`;
+                slider.appendChild(slide);
+
+                const dot = document.createElement('div');
+                dot.className = `slider-dot ${index === 0 ? 'active' : ''}`;
+                dot.addEventListener('click', () => goToSlide(index));
+                sliderNav.appendChild(dot);
+            });
+        }
+
+        // Функції для слайдера
+        function goToSlide(slideIndex) {
+            currentSlide = slideIndex;
+            slider.style.transform = `translateX(-${slideIndex * 100}%)`;
+            
+            // Оновлюємо активну точку
+            document.querySelectorAll('.slider-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === slideIndex);
+            });
+        }
+
+        function nextSlide() {
+            const giveaway = giveaways[currentGiveaway];
+            currentSlide = (currentSlide + 1) % giveaway.images.length;
+            goToSlide(currentSlide);
+        }
+
+        // Функції для навігації по розіграшам
+        function prevGiveaway() {
+            currentGiveaway = (currentGiveaway - 1 + giveaways.length) % giveaways.length;
+            initGiveaway();
+        }
+
+        function nextGiveaway() {
+            currentGiveaway = (currentGiveaway + 1) % giveaways.length;
+            initGiveaway();
+        }
+
+        // Автоматична зміна слайдів
+        let slideInterval = setInterval(nextSlide, 4000);
+
+        // Таймер
+        function updateTimer() {
+            const giveaway = giveaways[currentGiveaway];
+            const now = new Date();
+            const diff = giveaway.endDate - now;
+            
+            if (diff <= 0) {
+                document.getElementById('timer').textContent = "Завершено";
+                return;
+            }
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('timer').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        // Функція участі
+        function participate() {
+            const giveaway = giveaways[currentGiveaway];
+            
+            // Тут буде інтеграція з Telegram Web App API для оплати
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: 'Участь у розіграші',
+                    message: `Ви збираєтеся взяти участь у розіграші "${giveaway.title}" за 1 грн. Продовжити?`,
+                    buttons: [
+                        {id: 'yes', type: 'default', text: 'Так, брати участь!'},
+                        {id: 'no', type: 'destructive', text: 'Скасувати'}
+                    ]
+                });
+            } else {
+                alert(`Дякуємо за участь у розіграші "${giveaway.title}"! Для оплати ви будете перенаправлені в безпечне середовище.`);
+                // Тут буде редирект на сторінку оплати
+            }
+        }
+
+        // Функції для репостів
+        function shareToTelegram() {
+            const giveaway = giveaways[currentGiveaway];
+            const text = `Участвуй у розіграші "${giveaway.title}" за 1 грн! 🎉 Шанс виграти ${giveaway.prize}. Чим більше репостів - тим вищі шанси на перемогу!`;
+            const url = "https://t.me/share/url?url=" + encodeURIComponent(window.location.href) + "&text=" + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        function shareToFacebook() {
+            const url = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(window.location.href);
+            window.open(url, '_blank');
+        }
+
+        function shareToWhatsApp() {
+            const giveaway = giveaways[currentGiveaway];
+            const text = `Участвуй у розіграші "${giveaway.title}" за 1 грн! 🎉 Шанс виграти ${giveaway.prize}. ` + window.location.href;
+            const url = "https://wa.me/?text=" + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        function shareToTwitter() {
+            const giveaway = giveaways[currentGiveaway];
+            const text = `Участвуй у розіграші "${giveaway.title}" за 1 грн! 🎉 Шанс виграти ${giveaway.prize}.`;
+            const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent(window.location.href);
+            window.open(url, '_blank');
+        }
+
+        function shareToMessenger() {
+            const url = "fb-messenger://share?link=" + encodeURIComponent(window.location.href);
+            window.open(url, '_blank');
+        }
+
+        function shareToViber() {
+            const giveaway = giveaways[currentGiveaway];
+            const text = `Участвуй у розіграші "${giveaway.title}" за 1 грн! 🎉 Шанс виграти ${giveaway.prize}. ` + window.location.href;
+            const url = "viber://forward?text=" + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        // Додавання обробників подій
+        document.getElementById('prevGiveaway').addEventListener('click', prevGiveaway);
+        document.getElementById('nextGiveaway').addEventListener('click', nextGiveaway);
+
+        // Додавання свайпів для мобільних пристроїв
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.querySelector('.slider-container').addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.querySelector('.slider-container').addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            
+            if (touchEndX < touchStartX - swipeThreshold) {
+                // Свайп вліво - наступний розіграш
+                nextGiveaway();
+            } else if (touchEndX > touchStartX + swipeThreshold) {
+                // Свайп вправо - попередній розіграш
+                prevGiveaway();
+            }
+        }
+
+        // Ініціалізація Telegram Web App
+        if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+        }
+
+        // Запуск програми
+        initApp();
+    </script>
+</body>
+</html>
